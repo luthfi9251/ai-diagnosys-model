@@ -2,13 +2,28 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import accuracy_score, recall_score, precision_score
 import pandas as pd
+import joblib
+import random
+import os
 
 
 class ModelGenerator:
+    model = None
+
     def set_model(self, name_model, model):
         self.name_model = name_model
         if model == "decision_tree":
             self.model = DecisionTreeClassifier()
+
+    def set_model_from_local(self, path_to_model):
+        #try:
+        
+        path = os.path.join(os.getcwd(), path_to_model)
+        self.name_model = os.path.basename(path)
+        self.model = joblib.load(path)
+        # except:
+        #     print("Error when load model")
+        #     return "Error when load model"
 
     def get_model_params(self):
         return self.model.get_params(deep=True)
@@ -17,7 +32,8 @@ class ModelGenerator:
         self.model.set_params(**params)
 
     def set_dataset(self, path_to_dataset, target_label):
-        self.dataset = pd.read_csv(path_to_dataset)
+        full_path = os.path.join(os.getcwd(),path_to_dataset)
+        self.dataset = pd.read_csv(full_path)
         self.target_label = target_label
 
     def prepare_dataset(self, test_size):
@@ -64,18 +80,37 @@ class ModelGenerator:
             ),
         }
 
+    def save_model(self):
+        path = "models/"
+        self.filename =  self.name_model.replace(" ", "") + "-" + str(random.randint(100,1000)) + ".joblib"
+        if self.model == None:
+            return "Please set model first!"
+        joblib.dump(self.model, path + self.filename)
+        return{
+            "path": path + self.filename,
+            "file_name": self.filename,
+            "model_info": self.get_information_model()
+        }
+    
+    def get_model(self):
+        return self.model
+        
+        
 
-test = ModelGenerator()
-test.set_model("decision tree 1", "decision_tree")
-test.set_dataset("../datasets/heart.csv", "output")
-# print(test.train_model(test_size=0.1))
 
-param_grid = {
-    "criterion": ["gini", "entropy"],
-    "max_depth": [None, 10, 20, 30],
-    "min_samples_split": [2, 5, 10],
-    "min_samples_leaf": [1, 2, 4],
-}
 
-res = test.find_best_params_model(params_test=param_grid, test_size=0.2)
-print(res)
+# test = ModelGenerator()
+
+#test.set_model_from_local('models/decisiontree1-279.joblib')
+# test.set_model("decisiontree2","decision_tree")
+# test.set_dataset("datasets/heart.csv", "output")
+# test.train_model(test_size=0.1)
+# print(test.get_information_model())
+# param_grid = {
+#     "criterion": ["gini", "entropy"],
+#     "max_depth": [None, 10, 20, 30],
+#     "min_samples_split": [2, 5, 10],
+#     "min_samples_leaf": [1, 2, 4],
+# }
+# res = test.find_best_params_model(params_test=param_grid, test_size=0.2)
+# print(res)
